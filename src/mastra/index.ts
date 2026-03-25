@@ -14,11 +14,12 @@ import { supervisorAgent } from './agents/supervisor-agent';
 import { researchAgent } from './agents/research-agent';
 import { writerAgent } from './agents/writer-agent';
 import { coderAgent } from './agents/coder-agent';
+import { cryptoAgent } from './agents/crypto-agent';
 
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow, approvalWorkflow },
-  agents: { weatherAgent, stockAgent, imageAgent, excalidrawAgent, voiceAgent, supervisorAgent, researchAgent, writerAgent, coderAgent },
+  agents: { weatherAgent, stockAgent, imageAgent, excalidrawAgent, voiceAgent, supervisorAgent, researchAgent, writerAgent, coderAgent, cryptoAgent },
   storage: new LibSQLStore({
     id: "mastra-storage",
     // stores observability, scores, ... into persistent file storage

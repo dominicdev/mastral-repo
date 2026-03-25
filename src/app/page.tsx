@@ -14,6 +14,7 @@ import {
   PencilRulerIcon,
   MicIcon,
   NetworkIcon,
+  BitcoinIcon,
 } from 'lucide-react'
 
 const EXAMPLES = [
@@ -88,6 +89,16 @@ const EXAMPLES = [
         title: 'Workflow: Suspend & Resume',
         description: 'A content pipeline that pauses for human approval mid-execution, then resumes — human-in-the-loop.',
         tags: ['Workflow', 'Human-in-loop', 'Suspend'],
+        status: 'live' as const,
+      },
+      {
+        href: '/crypto',
+        icon: BitcoinIcon,
+        iconBg: 'bg-teal-500/10',
+        iconColor: 'text-teal-500',
+        title: 'Crypto Analyst',
+        description: 'Real-time crypto prices with AI-powered 24-hour outlook, trend analysis, and possible price ranges.',
+        tags: ['Crypto', 'Prediction', 'Tools'],
         status: 'live' as const,
       },
     ],

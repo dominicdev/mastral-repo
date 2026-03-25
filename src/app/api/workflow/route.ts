@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     }
 
     const workflow = mastra.getWorkflow('approvalWorkflow');
-    const run = workflow.createRun();
+    const run = await workflow.createRun();
 
     const result = await run.start({ inputData: { topic: topic.trim() } });
 
@@ -47,7 +47,7 @@ export async function PUT(req: Request) {
     }
 
     const workflow = mastra.getWorkflow('approvalWorkflow');
-    const run = workflow.createRun({ runId });
+    const run = await workflow.createRun({ runId });
 
     const result = await run.resume({
       step: 'human-review',
