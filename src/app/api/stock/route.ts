@@ -8,20 +8,25 @@ const THREAD_ID = 'stock-thread-id';
 const RESOURCE_ID = 'stock-chat';
 
 export async function POST(req: Request) {
-  const params = await req.json();
-  const stream = await handleChatStream({
-    mastra,
-    agentId: 'stock-agent',
-    params: {
-      ...params,
-      memory: {
-        ...params.memory,
-        thread: THREAD_ID,
-        resource: RESOURCE_ID,
+  try {
+    const params = await req.json();
+    const stream = await handleChatStream({
+      mastra,
+      agentId: 'stock-agent',
+      params: {
+        ...params,
+        memory: {
+          ...params.memory,
+          thread: THREAD_ID,
+          resource: RESOURCE_ID,
+        },
       },
-    },
-  });
-  return createUIMessageStreamResponse({ stream });
+    });
+    return createUIMessageStreamResponse({ stream });
+  } catch (err) {
+    console.error('[stock POST]', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function GET() {

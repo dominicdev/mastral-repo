@@ -34,22 +34,12 @@ export const mastra = new Mastra({
     coderAgent,
     cryptoAgent,
   },
-  ...(process.env.TURSO_DATABASE_URL
-    ? {
-        storage: new LibSQLStore({
-          id: "mastra-storage",
-          url: process.env.TURSO_DATABASE_URL,
-          authToken: process.env.TURSO_AUTH_TOKEN,
-        }),
-      }
-    : process.env.NODE_ENV !== "production"
-      ? {
-          storage: new LibSQLStore({
-            id: "mastra-storage",
-            url: "file:./mastra.db",
-          }),
-        }
-      : {}),
+  storage: new LibSQLStore({
+    id: "mastra-storage",
+    url: process.env.TURSO_DATABASE_URL
+      ?? (process.env.NODE_ENV === "production" ? ":memory:" : "file:./mastra.db"),
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  }),
   logger: new PinoLogger({
     name: "Mastra",
     level: "info",
