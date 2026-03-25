@@ -9,14 +9,15 @@ interface YahooChartResponse {
         symbol: string;
         shortName: string;
         regularMarketPrice: number;
-        previousClose: number;
+        previousClose: number | null;
+        chartPreviousClose: number | null;
         regularMarketVolume: number;
         regularMarketDayHigh: number;
         regularMarketDayLow: number;
         fiftyTwoWeekHigh: number;
         fiftyTwoWeekLow: number;
-        marketCap: number;
-        regularMarketChangePercent: number;
+        marketCap: number | null;
+        regularMarketChangePercent: number | null;
       };
     }[];
     error: null | { code: string; description: string };
@@ -33,13 +34,13 @@ export const stockPriceTool = createTool({
     symbol: z.string(),
     companyName: z.string(),
     price: z.number(),
-    previousClose: z.number(),
-    change: z.number(),
-    changePercent: z.number(),
+    previousClose: z.number().nullable(),
+    change: z.number().nullable(),
+    changePercent: z.number().nullable(),
     dayHigh: z.number(),
     dayLow: z.number(),
     volume: z.number(),
-    marketCap: z.number(),
+    marketCap: z.number().nullable(),
     fiftyTwoWeekHigh: z.number(),
     fiftyTwoWeekLow: z.number(),
     currency: z.string(),
@@ -73,20 +74,25 @@ const getStockPrice = async (symbol: string) => {
     throw new Error(`No data found for symbol: ${symbol}`);
   }
 
-  const change = meta.regularMarketPrice - meta.previousClose;
-  const changePercent = meta.regularMarketChangePercent ?? (change / meta.previousClose) * 100;
+  const prevClose = meta.previousClose ?? meta.chartPreviousClose ?? null;
+  const change = prevClose != null ? Math.round((meta.regularMarketPrice - prevClose) * 100) / 100 : null;
+  const changePercent = meta.regularMarketChangePercent != null
+    ? Math.round(meta.regularMarketChangePercent * 100) / 100
+    : (change != null && prevClose != null)
+      ? Math.round((change / prevClose) * 10000) / 100
+      : null;
 
   return {
     symbol: meta.symbol,
     companyName: meta.shortName || symbol,
     price: meta.regularMarketPrice,
-    previousClose: meta.previousClose,
-    change: Math.round(change * 100) / 100,
-    changePercent: Math.round(changePercent * 100) / 100,
+    previousClose: prevClose,
+    change,
+    changePercent,
     dayHigh: meta.regularMarketDayHigh,
     dayLow: meta.regularMarketDayLow,
     volume: meta.regularMarketVolume,
-    marketCap: meta.marketCap,
+    marketCap: meta.marketCap ?? null,
     fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
     fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
     currency: meta.currency,
