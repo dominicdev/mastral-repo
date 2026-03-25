@@ -4,7 +4,6 @@ import { LibSQLStore } from "@mastra/libsql";
 import {
   Observability,
   DefaultExporter,
-  CloudExporter,
   SensitiveDataFilter,
 } from "@mastra/observability";
 import { weatherWorkflow } from "./workflows/weather-workflow";
@@ -35,11 +34,22 @@ export const mastra = new Mastra({
     coderAgent,
     cryptoAgent,
   },
-  storage: new LibSQLStore({
-    id: "mastra-storage",
-    url: process.env.TURSO_DATABASE_URL ?? "file:./mastra.db",
-    authToken: process.env.TURSO_AUTH_TOKEN,
-  }),
+  ...(process.env.TURSO_DATABASE_URL
+    ? {
+        storage: new LibSQLStore({
+          id: "mastra-storage",
+          url: process.env.TURSO_DATABASE_URL,
+          authToken: process.env.TURSO_AUTH_TOKEN,
+        }),
+      }
+    : process.env.NODE_ENV !== "production"
+      ? {
+          storage: new LibSQLStore({
+            id: "mastra-storage",
+            url: "file:./mastra.db",
+          }),
+        }
+      : {}),
   logger: new PinoLogger({
     name: "Mastra",
     level: "info",
@@ -50,7 +60,6 @@ export const mastra = new Mastra({
         serviceName: "mastra",
         exporters: [
           new DefaultExporter(), // Persists traces to storage for Mastra Studio
-          new CloudExporter(), // Sends traces to Mastra Cloud (if MASTRA_CLOUD_ACCESS_TOKEN is set)
         ],
         spanOutputProcessors: [
           new SensitiveDataFilter(), // Redacts sensitive data like passwords, tokens, keys
