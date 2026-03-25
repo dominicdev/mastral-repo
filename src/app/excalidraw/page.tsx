@@ -50,24 +50,24 @@ interface ExcalidrawData {
 
 const EXAMPLE_IMAGES = [
   {
-    label: 'Flowchart',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Flowchart_example.svg/480px-Flowchart_example.svg.png',
+    label: 'Pastebin Design',
+    url: 'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/images/4edXG0T.png',
   },
   {
-    label: 'UML Class',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Singleton_UML_class_diagram.svg/480px-Singleton_UML_class_diagram.svg.png',
+    label: 'Mint.com Design',
+    url: 'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/images/V5q57vU.png',
   },
   {
-    label: 'Network',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/NetworkTopologies.svg/480px-NetworkTopologies.svg.png',
+    label: 'Social Network',
+    url: 'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/images/cdCv5g7.png',
   },
   {
-    label: 'Algorithm',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Euclid_algorithm_flowchart_diagram_in_Breton.svg/360px-Euclid_algorithm_flowchart_diagram_in_Breton.svg.png',
+    label: 'Sales Ranking',
+    url: 'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/images/MzExP06.png',
   },
   {
-    label: 'Architecture',
-    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Content_persistence.system_architecture.diagram.svg/600px-Content_persistence.system_architecture.diagram.svg.png',
+    label: 'AWS Architecture',
+    url: 'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/images/jj3A5N8.png',
   },
 ]
 

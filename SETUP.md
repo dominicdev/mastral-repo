@@ -1,177 +1,209 @@
-# Mastra + Next.js Setup Guide
+# Mastra + Next.js — Setup Guide
+
+Based on the official guide: https://mastra.ai/guides/getting-started/next-js
+
+---
 
 ## Prerequisites
 
-- Node.js 22.13.0 or higher
-- npm or pnpm
-- A Google AI account (for Gemini models)
-- A Mastra Cloud account (optional but recommended)
+- Node.js **v22.13.0** or later
+- An API key from a supported model provider
 
 ---
 
-## 1. Install Dependencies
+## Step 1 — Create a Next.js Project
 
 ```bash
-npm install
+npx create-next-app@latest my-nextjs-agent \
+  --yes --ts --eslint --tailwind \
+  --src-dir --app --turbopack \
+  --no-react-compiler --no-import-alias
+```
+
+```bash
+cd my-nextjs-agent
 ```
 
 ---
 
-## 2. Environment Variables
-
-Copy the example env file and fill in your keys:
+## Step 2 — Initialize Mastra
 
 ```bash
-cp .env.example .env
+npx mastra@latest init
 ```
 
-Your `.env` file needs these variables:
+This generates a `src/mastra/` folder with:
+
+| File | Description |
+|------|-------------|
+| `index.ts` | Mastra instance — registers agents, tools, workflows |
+| `agents/weather-agent.ts` | Example agent |
+| `tools/weather-tool.ts` | Example tool |
+
+---
+
+## Step 3 — Install AI SDK & UI Components
+
+```bash
+npm install @mastra/ai-sdk@latest @ai-sdk/react ai
+```
+
+```bash
+npx ai-elements@latest
+```
+
+> `ai-elements` downloads the full AI chat UI component library into `src/components/ai-elements/`
+> — includes `<Conversation>`, `<Message>`, `<PromptInput>`, `<Tool>`, and more.
+
+---
+
+## Step 4 — Set Up Environment Variables
+
+Create a `.env` file in the project root:
 
 ```env
-GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
-MASTRA_CLOUD_ACCESS_TOKEN=your_mastra_cloud_token_here   # optional
+# Required — pick your model provider
+GOOGLE_GENERATIVE_AI_API_KEY=your_key_here
+
+# Optional — enables Mastra Cloud tracing & Studio
+MASTRA_CLOUD_ACCESS_TOKEN=your_token_here
 ```
 
----
+### Get your Google Generative AI key
 
-## 3. Get Your Google Generative AI API Key
-
-This project uses **Gemini 2.5 Pro** for all agents. You need a Google AI API key.
-
-1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+1. Go to **https://aistudio.google.com/apikey**
 2. Sign in with your Google account
 3. Click **"Create API key"**
-4. Copy the key and paste it into `.env`:
-   ```
-   GOOGLE_GENERATIVE_AI_API_KEY=AIza...
-   ```
+4. Copy and paste into `.env`
 
-> Free tier includes generous limits. No credit card required to start.
+> Free tier — no credit card required.
 
----
+### Get your Mastra Cloud token
 
-## 4. Get Your Mastra Cloud Access Token
+Mastra Cloud stores traces and powers the remote Studio dashboard. **Optional** — app works without it.
 
-Mastra Cloud stores traces, observability data, and lets you use Mastra Studio remotely.
-**This is optional** — the app works without it (you'll just see a warning in the console).
-
-### Steps
-
-1. Go to [https://cloud.mastra.ai](https://cloud.mastra.ai)
-2. Sign up or log in
-3. Create a new **Project** (e.g. `my-nextjs-agent`)
-4. In the project dashboard, go to **Settings** → **API Keys**
+1. Go to **https://cloud.mastra.ai**
+2. Sign up / log in
+3. Create a new **Project**
+4. Go to **Settings → API Keys**
 5. Click **"Generate Access Token"**
-6. Copy the token and paste it into `.env`:
-   ```
-   MASTRA_CLOUD_ACCESS_TOKEN=eyJhbGci...
-   ```
+6. Copy and paste into `.env`
 
-### What it does
-
-- Sends traces to Mastra Cloud so you can inspect every agent call
-- Powers the **Mastra Studio** UI at `http://localhost:4111`
-- Enables scoring and evaluation dashboards
-
-### If you skip this
-
-You'll see this warning in the console — it's safe to ignore:
+If you skip this, you'll see this warning (safe to ignore):
 ```
 mastra-cloud-observability-exporter disabled: MASTRA_CLOUD_ACCESS_TOKEN not set
 ```
 
 ---
 
-## 5. Run the Development Server
+## Step 5 — Create the API Route
+
+Create `src/app/api/chat/route.ts`:
+
+```typescript
+import { handleChatStream } from '@mastra/ai-sdk'
+import { toAISdkV5Messages } from '@mastra/ai-sdk/ui'
+import { createUIMessageStreamResponse } from 'ai'
+import { mastra } from '@/mastra'
+import { NextResponse } from 'next/server'
+
+const THREAD_ID = 'example-user-id'
+const RESOURCE_ID = 'weather-chat'
+
+export async function POST(req: Request) {
+  const params = await req.json()
+  const stream = await handleChatStream({
+    mastra,
+    agentId: 'weather-agent',
+    params: {
+      ...params,
+      memory: { ...params.memory, thread: THREAD_ID, resource: RESOURCE_ID },
+    },
+  })
+  return createUIMessageStreamResponse({ stream })
+}
+
+export async function GET() {
+  const memory = await mastra.getAgentById('weather-agent').getMemory()
+  let response = null
+  try {
+    response = await memory?.recall({ threadId: THREAD_ID, resourceId: RESOURCE_ID })
+  } catch {
+    console.log('No previous messages found.')
+  }
+  const uiMessages = toAISdkV5Messages(response?.messages || [])
+  return NextResponse.json(uiMessages)
+}
+```
+
+---
+
+## Step 6 — Create the Chat Page
+
+Create `src/app/chat/page.tsx` using:
+
+- `useChat()` from `@ai-sdk/react` with `DefaultChatTransport`
+- `sendMessage({ text })` to send messages
+- `message.parts` to render text and tool calls
+- AI Elements components for the UI
+
+Key patterns:
+```typescript
+// Hook setup
+const { messages, sendMessage, status, stop } = useChat({
+  transport: new DefaultChatTransport({ api: '/api/chat' }),
+})
+
+// Render message parts
+message.parts?.map((part) => {
+  if (part.type === 'text') return <MessageResponse>{part.text}</MessageResponse>
+  if (part.type?.startsWith('tool-')) return <Tool>...</Tool>
+})
+```
+
+---
+
+## Step 7 — Run
 
 ```bash
 npm run dev
 ```
 
-The app will be available at **http://localhost:3000**
+Visit **http://localhost:3000/chat**
 
 ---
 
-## 6. (Optional) Run Mastra Studio
+## Step 8 — (Optional) Mastra Studio
 
-Mastra Studio is a local dashboard to inspect agents, traces, and memory.
-
-Open a second terminal and run:
+Mastra Studio lets you inspect agents, memory, traces, and tool calls locally.
 
 ```bash
-# Inside the mastra project (if separate) or same project
+# In a separate terminal
 npx mastra dev
 ```
 
-Studio runs at **http://localhost:4111**
+Visit **http://localhost:4111**
 
 ---
 
-## 7. Available Pages
+## Common Gotchas
 
-| Route | Description |
-|-------|-------------|
-| `/` | Home — navigation hub |
-| `/chat` | Mastra Assistant — general AI chat with memory |
-| `/stock` | Stock Price Tracker — live quotes via Yahoo Finance |
-| `/image` | Image Analyzer — vision AI for objects, animals, scenes |
-| `/excalidraw` | Image to Excalidraw — convert diagrams to editable JSON |
-| `/voice` | Voice Agent — speak and get spoken responses (Chrome/Edge only) |
-| `/supervisor` | Supervisor Agent — multi-agent orchestration |
-| `/workflow` | Workflow Suspend & Resume — human-in-the-loop pipeline |
-| `/crypto` | Crypto Analyst — live prices + 24h AI outlook |
+| Problem | Fix |
+|---------|-----|
+| `append is not a function` | Use `sendMessage({ text })` — not `append()` — in `@ai-sdk/react` v3 |
+| `message.content` is undefined | Use `message.parts` — AI SDK v6 stores content in parts |
+| `isLoading` prop warning | Use `status` prop on `<PromptInputSubmit>` — not `isLoading` |
+| Workflow not found | `mastra.getWorkflow()` uses the **object key** (e.g. `'approvalWorkflow'`), not the workflow `id` |
+| `createRun is not async` | Always `await workflow.createRun()` before calling `.start()` |
+| Tool `context` is undefined | Tool `execute` receives input as first arg directly: `execute: async (inputData) => inputData.field` |
+| Voice not working | Speech Recognition requires **Chrome** or **Edge** — not Firefox/Safari |
 
 ---
 
-## 8. Project Structure
+## Useful Links
 
-```
-src/
-├── app/                    # Next.js pages and API routes
-│   ├── api/                # Backend API routes
-│   ├── chat/               # Chat page
-│   ├── stock/              # Stock tracker page
-│   ├── image/              # Image analyzer page
-│   ├── excalidraw/         # Excalidraw converter page
-│   ├── voice/              # Voice agent page
-│   ├── supervisor/         # Multi-agent supervisor page
-│   ├── workflow/           # Workflow suspend/resume page
-│   └── crypto/             # Crypto analyst page
-├── mastra/
-│   ├── agents/             # All agent definitions
-│   ├── tools/              # Custom tools (stock, crypto, etc.)
-│   ├── workflows/          # Workflow definitions
-│   └── index.ts            # Mastra instance + registration
-└── components/
-    ├── ai-elements/        # Chat UI components
-    └── ui/                 # shadcn/ui components
-```
-
----
-
-## 9. Adding a New Agent
-
-1. Create `src/mastra/agents/my-agent.ts`
-2. Register it in `src/mastra/index.ts`
-3. Create an API route at `src/app/api/my-route/route.ts`
-4. Build the page at `src/app/my-page/page.tsx`
-5. Add a card in `src/app/page.tsx`
-
----
-
-## Troubleshooting
-
-**"Coin not found" or API errors**
-- CoinGecko free API has rate limits — wait a few seconds and retry
-
-**"Workflow with ID not found"**
-- Make sure the workflow is registered in `src/mastra/index.ts` using the correct object key
-
-**Voice page not working**
-- Speech Recognition only works in **Chrome** or **Edge** — not Firefox or Safari
-
-**"append is not a function"**
-- Use `sendMessage({ text })` from `useChat` — not `append`
-
-**TypeScript errors after adding a new agent**
-- Run `npm run build` to catch type errors early
+- Official guide: https://mastra.ai/guides/getting-started/next-js
+- Mastra docs: https://mastra.ai/docs
+- Mastra Cloud: https://cloud.mastra.ai
+- Google AI Studio: https://aistudio.google.com/apikey
+- AI Elements components: `npx ai-elements@latest`
