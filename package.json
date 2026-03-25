@@ -12,7 +12,6 @@
     "@ai-sdk/react": "^3.0.140",
     "@mastra/ai-sdk": "^1.2.1",
     "@mastra/core": "^1.16.0",
-    "@mastra/deployer-vercel": "^1.1.8",
     "@mastra/libsql": "^1.7.2",
     "@mastra/loggers": "^1.0.3",
     "@mastra/memory": "^1.10.0",

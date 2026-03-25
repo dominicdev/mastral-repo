@@ -18,7 +18,6 @@ import { researchAgent } from "./agents/research-agent";
 import { writerAgent } from "./agents/writer-agent";
 import { coderAgent } from "./agents/coder-agent";
 import { cryptoAgent } from "./agents/crypto-agent";
-import { VercelDeployer } from "@mastra/deployer-vercel";
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow, approvalWorkflow },
@@ -57,5 +56,4 @@ export const mastra = new Mastra({
       },
     },
   }),
-  deployer: new VercelDeployer(),
 });
